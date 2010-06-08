@@ -1,19 +1,20 @@
 PHP Backdoor Scanner
 
-This is a quick and dirty scanner I wrote to search a web server for traces of PHP backdoors or other malware, since they're so common, especially on sites that use open source content management systems like WordPress, Drupal, and Joomla. I wrote it php, but it's meant to be used with the command line interface, not a web browser.
+This is a quick and dirty scanner I wrote to search a web server for traces of PHP backdoors or other malware, since they're so common, especially on sites that use open source content management systems like WordPress, Drupal, and Joomla. I wrote it php, but it's meant to be run on a cron job, not a web browser.
 
-You pass it the path to a folder and an output file. It recursively looks through that folder for php files. When it finds them, it searches them for a list of things that look suspiciously like they could be malware, like the "c99shell" or "eval(base64(". When it finds them, it saves their filenames to your output file.
+Edit the configuration section at the beginning of php_backdoor_scanner.php to configure it.
 
-You can optionally pass it a third argument, a file with a list of filenames that are false positives. So if you've run this scan before and have verified that a lot of the results aren't actually malware, you can those filenames in your false positives file so they won't get check the next time you run the scan.
+$config['target_dir'] is the root folder that gets scanned
+$config['output_file'] is the name of the file that it outputs to
+$config['false_positives_file'] is an optional file with a list of filenames that come up as suspicious but should be ignored by the scanner
+$config['email'] is an optional email address that will get sent an email if any suspicious files are found
 
-For example, let's say you're running a web server with shared hosting, each website in it's own user's home folder, and you want to scan everything in /home for php malware. You do it like this:
+When you run the backdoor scanner, it recursively searches your target directory for php files. When it finds them, it searches them for a list of things that look suspiciously like they could be malware, like the "c99shell" or "eval(base64(". When it finds them, it saves their filenames to your output file, and at the end of the scan sends you an email.
 
-sudo php php_backdoor_scanner.php /home scan_results.txt
+You should run it as root if you're scanning files in several different user's home directories.
 
-It of course doesn't need root to run, but you do need to have privileges to read files in the folder you're scanning.
-
+Also, beneath the configuration section of php_backdoor_scanner.php is an array of suspicious strings. Feel free to add your own strings to that list. But remember, the more vague the string, the more false positives you'll get.
 
 Wishlist:
 - instead of using an array of strings, use regex
-- use config file, for better customization
 

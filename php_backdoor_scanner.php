@@ -1,15 +1,24 @@
 <?php
 
-// usage
-if($argc < 3) {
-    echo "[] Usage: php ".$argv[0]." folder_to_scan output_file [false_positives_file]\n\n";
-    exit();
-}
-$target_dir = $argv[1];
-$output_file = $argv[2];
-if($argc == 4) {
-    $false_positives_file = $argv[3];
-    $contents = file_get_contents($false_positives_file);
+// configuration
+$config['target_dir'] = "/home";
+$config['output_file'] = "output/results_".date("Y-m-d").".txt";
+$config['false_positives_file'] = "false_positives.txt";
+$config['email'] = "sysop@radicaldesigns.org";
+
+// files are suspicious if they contain any of these strings
+$suspicious_strings = array(
+    'c99shell', 'phpspypass', 'Owned',
+    'hacker', 'h4x0r', '/etc/passwd',
+    'uname -a', 'eval(base64_decode(',
+    '(0xf7001E)?0x8b:(0xaE17A)',
+    'd06f46103183ce08bbef999d3dcc426a',
+    'rss_f541b3abd05e7962fcab37737f40fad8');
+$suspicious_files = array();
+
+// false positives
+if(file_exists($config['false_positives_file'])) {
+    $contents = file_get_contents($config['false_positives_file']);
     $false_positives = explode("\n", $contents);
 } else {
     $false_positives = false;
@@ -27,7 +36,7 @@ $dir_count = 0;
 function backdoor_scan($path) {
     global $suspicious_strings;
     global $suspicious_files;
-    global $output_file;
+    global $config;
     global $false_positives;
     global $dir_count;
     
@@ -72,9 +81,12 @@ function backdoor_scan($path) {
                             
                             // record this in the output file
                             // note: i'm opening and closing this file each time so you can view the file before the entire scan is done
-                            $of = fopen($output_file, "a");
+                            $of = fopen($config['output_file'], "a");
                             fwrite($of, $full_filename."\n");
                             fclose($of);
+
+                            // save it the array
+                            $suspicious_files[] = $full_filename;
                         }
                     }
                 }
@@ -84,23 +96,32 @@ function backdoor_scan($path) {
 }
 
 // start with an empty output file
-$of = fopen($output_file, "w");
+$of = fopen($config['output_file'], "w");
 fclose($of);
 
-// files are suspicious if they contain any of these strings
-$suspicious_strings = array('c99shell', 'phpspypass', 'Owned', 'hacker', 'h4x0r', '/etc/passwd', 'uname -a', 'eval(base64_decode(');
-
 // if the target_dir has a trailing /, remove it
-if(substr($target_dir, -1) == "/")
-    $target_dir = substr($target_dir, 0, strlen($target_dir)-1);
+if(substr($config['target_dir'], -1) == "/")
+    $config['target_dir'] = substr($config['target_dir'], 0, strlen($config['target_dir'])-1);
 
 // scan it all
-backdoor_scan($target_dir);
+backdoor_scan($config['target_dir']);
 
-// print out the suspicious files
+// if we found any, email it to sysop
+if(sizeof($suspicious_files > 0)) {
+    if(!empty($config['email'])) {
+        $body = '';
+        foreach($suspicious_files as $filename) {
+            $body .= $filename."\r\n";
+        }
+        mail($config['email'], "Found ".sizeof($suspicious_files)." suspicious files on ".date("Y-m-d"),
+            $body, "From: ".$config['email']."\r\nReply-To: ".$config['email']."\r\n");
+    }
+}
+
+// finished 
 echo "\n\n";
 if(sizeof($suspicious_files > 0)) {
-    echo "[] Scan complete. A list of suspicious files is stored in: ".$output_file."\n";
+    echo "[] Scan complete. A list of suspicious files is stored in: ".$config['output_file']."\n";
 } else {
     echo "[] Scan complete. No suspicious files were found.";
 }
