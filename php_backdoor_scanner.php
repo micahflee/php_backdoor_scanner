@@ -107,7 +107,7 @@ if(substr($config['target_dir'], -1) == "/")
 backdoor_scan($config['target_dir']);
 
 // if we found any, email it to sysop
-if(sizeof($suspicious_files > 0)) {
+if(sizeof($suspicious_files) > 0) {
     if(!empty($config['email'])) {
         $body = '';
         foreach($suspicious_files as $filename) {
