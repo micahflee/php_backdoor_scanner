@@ -13,7 +13,13 @@ $suspicious_strings = array(
     'uname -a', 'eval(base64_decode(',
     '(0xf7001E)?0x8b:(0xaE17A)',
     'd06f46103183ce08bbef999d3dcc426a',
-    'rss_f541b3abd05e7962fcab37737f40fad8');
+    'rss_f541b3abd05e7962fcab37737f40fad8',
+    'r57shell',
+    'Locus7s',
+    'milw0rm.com',
+    '$IIIIIIIIIIIl',
+    'SubhashDasyam.com',
+    '31337');
 $suspicious_files = array();
 
 // false positives
@@ -72,7 +78,7 @@ function backdoor_scan($path) {
                         $contents = file_get_contents($full_filename);
                         $suspicious = false;
                         foreach($suspicious_strings as $string) {
-                            if(strpos($contents, $string) != false)
+                            if(strpos(strtolower($contents), strtolower($string)) != false)
                                 $suspicious = true;
                         }
                         if($suspicious) {
